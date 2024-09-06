@@ -67,6 +67,6 @@ df['Decision'] = pd.Series(decisions).repeat(n1 + n2).reset_index(drop=True)
 
 # 查看前几行结果
 print(df.head(30))
-
+print(decisions)
 # 保存结果到 CSV 文件
 df.to_csv('binomial_double_sampling_decisions.csv', index=False)
