@@ -3,29 +3,32 @@ import random
 
 # 参数设置
 P1 = 0.1  # 零配件1的次品率
-P2 = 0.15  # 零配件2的次品率
-Cd = 5  # 检测成本
+P2 = 0.1  # 零配件2的次品率
+Cd1 = 5  # 检测1成本
+Cd2 = 3  # 检测2成本
 Cr = 50  # 退货损失成本
 Ct = 30  # 拆解成本
-Cl = 10  # 丢弃成本
-Cm = 100  # 合格成品利润
-N1 = 1000  # 零配件1的数量
-N2 = 1000  # 零配件2的数量
-Nf = 500  # 成品数量
+Cl1 = 10  # 购买1成本
+Cl2 = 10  # 购买2成本
+Cm = 100  # 合格成品售价
+N1 = 500  # 零配件1的数量
+N2 = 500  # 零配件2的数量
+Nf = 500  # 成品量
 
 
 # 成本计算函数
 def total_cost(q1, q2):
     # 成品次品率
-    Pf = (1 - q1) * P1 + (1 - q2) * P2
+    # Pf = (1 - q1) * P1 + (1 - q2) * P2
     # 零配件检测成本
-    part_detection_cost = q1 * N1 * Cd + q2 * N2 * Cd
+    part_detection_cost = q1 * N1 * Cd1 + q2 * N2 * Cd2
     # 退货与拆解成本
-    defect_cost = Pf * Nf * (Cr + Ct + Cl)
+    # defect_cost = Pf * Nf * (Cr + Ct + Cl)
+    defect_cost = Nf * (Ct + Cr)
     # 成品利润
-    profit = (1 - Pf) * Nf * Cm
+    # profit = (1 - Pf) * Nf * Cm
     # 总成本
-    return part_detection_cost + defect_cost - profit
+    return part_detection_cost + defect_cost
 
 
 # 模拟退火算法
