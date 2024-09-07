@@ -1,9 +1,10 @@
-
 # 导入库
 import numpy as np
 
 #拆解权重
 chaijie_q = 0.3
+
+
 # 定义情境数据
 class Qingjing:
     def __init__(self, cipin_rate1, goumai_1, jiance_1,
@@ -51,14 +52,14 @@ class Qingjing:
         self.part8_price = goumai_8
         self.part8_det_cost = jiance_8
 
-        # 半成品
-        self.product_def_rate = chengpin_cipin_rate
-        self.assembly_cost = zhuangpei
-        self.product_det_cost = chengpin_jiance
+        # 半成品1
+        self.product_def_rate = banchengpin_cipin_rate
+        self.assembly_cost = banzhuangpei
+        self.product_det_cost = banchengpin_jiance
 
         self.market_price = shoujia
         self.return_loss = sunshi_tuihuan
-        self.disassembly_cost = chaijie_cost
+        self.disassembly_cost = banchaijie_cost
         # 成品
         self.product_def_rate = chengpin_cipin_rate
         self.assembly_cost = zhuangpei
@@ -76,7 +77,7 @@ def detect_lingjian(cipin_rate, jiance_cost, zuzhuang_cost, chengben_lingjian):
     # 若不检测零配件，次品率带来的损失
     loss = cipin_rate * (zuzhuang_cost + chengben_lingjian)
     # 若损失大于检测成本，进行检测
-    if loss > jiance_cost + cipin_rate :
+    if loss > jiance_cost + cipin_rate:
         cipin_num = 1 - cipin_rate
         cipin_rate = 0.0
         print('检测')
@@ -86,12 +87,27 @@ def detect_lingjian(cipin_rate, jiance_cost, zuzhuang_cost, chengben_lingjian):
 
 
 # 检测成品
+def detect_banchanpin(cipin_rate, banchengpin_cipin, jian_cost, chaijie):
+    #不检测
+    chengpin_cipin = 0
+    cipin_num = 0
+    loss = (1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - banchengpin_cipin)) * (chaijie * chaijie_q)
+    if loss > jian_cost:  #检测
+        cipin_num = 1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - banchengpin_cipin)  #次品'
+        chengpin_cipin = 0.0
+        print('检测ban成品')
+    else:
+        print('不检测ban成品')
+    return chengpin_cipin, cipin_num
+
+
+# 检测成品
 def detect_chanpin(cipin_rate, chengpin_cipin, tuihuo, jian_cost, chaijie):
     #不检测
     cipin_num = 0
-    loss = (1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - chengpin_cipin)) * (tuihuo + chaijie * chaijie_q)
+    loss = (1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - chengpin_cipin)) * (1-cipin_rate[2])* (tuihuo + chaijie * chaijie_q)
     if loss > jian_cost:  #检测
-        cipin_num = 1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - chengpin_cipin)  #次品'
+        cipin_num = 1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - chengpin_cipin)*(1-cipin_rate[2])  #次品'
         chengpin_cipin = 0.0
         print('检测成品')
     else:
@@ -100,12 +116,12 @@ def detect_chanpin(cipin_rate, chengpin_cipin, tuihuo, jian_cost, chaijie):
 
 
 # 拆解
-def disassemble(cipin_rate, cipin_num, disassembly_cost, tuihuo, lingjian_1, lingjian_2):
+def disassemble(cipin_num, disassembly_cost, tuihuo, lingjian_1, lingjian_2):
     # 不拆
     # cipin_value = ((1 - cipin_rate[0]) * (1 - cipin_rate[1]) *cipin_chengpin* (lingjian_1 + lingjian_2) + (1 - cipin_rate[0]) *
     #                cipin_rate[1] * lingjian_1 + cipin_rate[0] * (1 - cipin_rate[1]) * lingjian_2) / (
     #     (1-cipin_rate[0]) +(1-cipin_rate[1])*cipin_chengpin+(1-cipin_rate[0])*cipin_rate[1]+cipin_rate[0]*(1-cipin_rate[1]) )
-    cipin_value = (lingjian_1+lingjian_2)/3
+    cipin_value = (lingjian_1 + lingjian_2) / 3
     loss = cipin_num * tuihuo + cipin_value
     if loss > disassembly_cost:
         print('拆解')
@@ -142,35 +158,27 @@ def juece(qingjing):
                                                     qingjing.assembly_cost,
                                                     qingjing.market_price)
 
-    # 2. 成品检测决策
-    cipin_rate = [rate_lingjian1, rate_lingjian2,rate_lingjian3,rate_lingjian4,rate_lingjian5,rate_lingjian6,rate_lingjian7,rate_lingjian8]
-    chengpin_rate, chengpin_cipin = detect_chanpin(cipin_rate, qingjing.product_def_rate, qingjing.return_loss,
-                                                   qingjing.product_det_cost, qingjing.disassembly_cost)
+    # 2. 半成品检测决策
+    cipin_rate1 = [rate_lingjian1, rate_lingjian2,rate_lingjian3]
+    cipin_rate2 = [rate_lingjian4, rate_lingjian5,rate_lingjian6]
+    cipin_rate3 = [rate_lingjian7, rate_lingjian8]
+
+    banchengpin1_rate, banchengpin1_cipin = detect_banchanpin(cipin_rate1, qingjing.product_def_rate,
+                                                            qingjing.product_det_cost, qingjing.disassembly_cost)
+    banchengpin2_rate, banchengpin2_cipin = detect_banchanpin(cipin_rate2, qingjing.product_def_rate,
+                                                            qingjing.product_det_cost, qingjing.disassembly_cost)
+    banchengpin3_rate, banchengpin3_cipin = detect_banchanpin(cipin_rate3, qingjing.product_def_rate,
+                                                            qingjing.product_det_cost, qingjing.disassembly_cost)
+
+    bancipin_rate = [banchengpin1_rate, banchengpin2_rate, banchengpin3_rate]
+
+    chengpin_rate, chengpin_cipin = detect_chanpin(bancipin_rate, qingjing.product_def_rate,qingjing.return_loss,
+                                                      qingjing.product_det_cost, qingjing.disassembly_cost)
 
     # 3. 拆解决策
-    chanjie_chanpin = disassemble(cipin_rate, chengpin_cipin, qingjing.disassembly_cost, qingjing.return_loss,
+    chanjie_chanpin = disassemble(chengpin_cipin, qingjing.disassembly_cost, qingjing.return_loss,
                                   qingjing.part1_price, qingjing.part2_price)
 
 
-# 定义6个情境，基于表 1 的数据
-scenarios = [
-    # 情境1的参数
-    Qingjing(0.1, 4, 2, 0.1, 18, 3, 0.1, 6, 3, 56, 6, 5),
-    # 情境2的参数
-    Qingjing(0.2, 4, 2, 0.2, 18, 3, 0.2, 6, 3, 56, 6, 5),
-    # 情境3的参数
-    Qingjing(0.1, 4, 2, 0.1, 18, 3, 0.1, 6, 30, 56, 30, 5),
-    # 情境4的参数
-    Qingjing(0.2, 4, 1, 0.2, 18, 1, 0.2, 6, 2, 56, 30, 5),
-    # 情境5的参数
-    Qingjing(0.1, 4, 8, 0.2, 18, 1, 0.1, 6, 2, 56, 10, 5),
-    # 情境6的参数
-    Qingjing(0.05, 4, 2, 0.05, 18, 3, 0.05, 6, 3, 56, 10, 40),
-]
-
-# 处理每个情境并输出结果
-# for i, changjing in enumerate(scenarios):
 #     print(f"情境 {i + 1}:")
-juece(Qingjing(0.1, 4, 2, 0.1, 18, 3, 0.1, 6, 3, 56, 6, 5))  # 对每个情境进行处理
-#     print("\n")  # 换行区分每个情境的输出
-# Qingjing(0.1, 4, 2, 0.1, 18, 3, 0.1, 6, 3, 56, 6, 5),
+juece(Qingjing(0.1, 2, 1, 0.1, 8, 1, 0.1, 12, 2, 0.1, 2, 1,0.1,8,1,0.1,12,2,0.1,8,1,0.1,12,2,0.1,8,4,6,0.1,8,6,200,40,10))  # 对每个情境进行处理
