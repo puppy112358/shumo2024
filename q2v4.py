@@ -3,6 +3,7 @@ import numpy as np
 
 #拆解权重
 chaijie_q = 0.3
+loss_all = 0
 
 
 # 定义情境数据
@@ -38,13 +39,15 @@ def detect_lingjian(cipin_rate, jiance_cost, zuzhuang_cost, chengben_lingjian):
     # 若不检测零配件，次品率带来的损失
     loss = cipin_rate * (zuzhuang_cost + chengben_lingjian)
     # 若损失大于检测成本，进行检测
-    if loss > jiance_cost + cipin_rate :
+    if loss > jiance_cost:
         cipin_num = 1 - cipin_rate
         cipin_rate = 0.0
+        loss_all = loss
         print('检测')
     else:
         print('不检测')
-    return cipin_rate, cipin_num
+        loss_all = jiance_cost + cipin_rate
+    return cipin_rate, cipin_num, loss_all
 
 
 # 检测成品
@@ -55,45 +58,49 @@ def detect_chanpin(cipin_rate, chengpin_cipin, tuihuo, jian_cost, chaijie):
     if loss > jian_cost:  #检测
         cipin_num = 1 - (1 - cipin_rate[0]) * (1 - cipin_rate[1]) * (1 - chengpin_cipin)  #次品'
         chengpin_cipin = 0.0
+        loss_all = loss
         print('检测成品')
     else:
         print('不检测成品')
-    return chengpin_cipin, cipin_num
+        loss_all = jian_cost
+    return chengpin_cipin, cipin_num,loss_all
 
 
 # 拆解
-def disassemble(cipin_rate, cipin_num,disassembly_cost, tuihuo, lingjian_1, lingjian_2,cipin_chengpin):
+def disassemble(cipin_num, disassembly_cost, tuihuo, lingjian_1, lingjian_2):
     # 不拆
     # cipin_value = ((1 - cipin_rate[0]) * (1 - cipin_rate[1]) *cipin_chengpin* (lingjian_1 + lingjian_2) + (1 - cipin_rate[0]) *
     #                cipin_rate[1] * lingjian_1 + cipin_rate[0] * (1 - cipin_rate[1]) * lingjian_2) / (
     #     (1-cipin_rate[0]) +(1-cipin_rate[1])*cipin_chengpin+(1-cipin_rate[0])*cipin_rate[1]+cipin_rate[0]*(1-cipin_rate[1]) )
-    cipin_value = (lingjian_1+lingjian_2)/3
+    cipin_value = (lingjian_1 + lingjian_2) / 3
     loss = cipin_num * tuihuo + cipin_value
     if loss > disassembly_cost:
         print('拆解')
+        loss_all = loss
     else:
         print('不拆解')
-        return loss
+        loss_all = disassembly_cost
+    return loss_all
 
 
 # 主函数，处理每种情境
 def juece(qingjing):
     # 1. 零配件检测决策
-    rate_lingjian1, lingjian1_num = detect_lingjian(qingjing.part1_def_rate, qingjing.part1_det_cost,
+    rate_lingjian1, lingjian1_num ,loss_all1= detect_lingjian(qingjing.part1_def_rate, qingjing.part1_det_cost,
                                                     qingjing.assembly_cost,
-                                                    qingjing.market_price)
-    rate_lingjian2, lingjian2_num = detect_lingjian(qingjing.part2_def_rate, qingjing.part2_det_cost,
+                                                    qingjing.part1_price)
+    rate_lingjian2, lingjian2_num ,loss_all2= detect_lingjian(qingjing.part2_def_rate, qingjing.part2_det_cost,
                                                     qingjing.assembly_cost,
-                                                    qingjing.market_price)
+                                                    qingjing.part2_price)
     # 2. 成品检测决策
     cipin_rate = [rate_lingjian1, rate_lingjian2]
-    chengpin_rate, chengpin_cipin = detect_chanpin(cipin_rate, qingjing.product_def_rate, qingjing.return_loss,
+    chengpin_rate, chengpin_cipin,loss_all3 = detect_chanpin(cipin_rate, qingjing.product_def_rate, qingjing.return_loss,
                                                    qingjing.product_det_cost, qingjing.disassembly_cost)
 
     # 3. 拆解决策
-    chanjie_chanpin = disassemble(cipin_rate, chengpin_cipin, qingjing.disassembly_cost, qingjing.return_loss,
-                                  qingjing.part1_price, qingjing.part2_price, qingjing.product_def_rate)
-
+    loss_all4 = disassemble(chengpin_cipin, qingjing.disassembly_cost, qingjing.return_loss,
+                                  qingjing.part1_price, qingjing.part2_price)
+    print(loss_all1+loss_all2+loss_all3+loss_all4)
 
 # 定义6个情境，基于表 1 的数据
 scenarios = [
